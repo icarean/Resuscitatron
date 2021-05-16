@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en-UK">
+<meta charset="UTF-8">
+<head>
+
+<title>Resuscitatron CPR timer</title>
+
+<!-- Serah Allison 2021 -->
+
+
+<!-- Prevent zoom in/out on Android -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+
+<!-- Icon by Wikimedia Commons user Overtheborderline -->
+<!-- https://commons.wikimedia.org/wiki/File:3D_heart.png -->
+<link rel="icon" href="./favicon.ico" type="image/x-icon" />
+
+<!-- Icon sizes and code from Greg Gant's "The 2020 Guide to FavIcons for Nearly Everyone and Every Browser":
+     https://www.emergeinteractive.com/insights/detail/The-Essentials-of-FavIcons/ -->
+<!-- generics -->
+<link rel="icon" href="icons/hearticon-32.png" sizes="32x32">
+<link rel="icon" href="icons/hearticon-57.png" sizes="57x57">
+<link rel="icon" href="icons/hearticon-76.png" sizes="76x76">
+<link rel="icon" href="icons/hearticon-96.png" sizes="96x96">
+<link rel="icon" href="icons/hearticon-128.png" sizes="128x128">
+<link rel="icon" href="icons/hearticon-192.png" sizes="192x192">
+<link rel="icon" href="icons/hearticon-228.png" sizes="228x228">
+
+<!-- Android -->
+<link rel="shortcut icon" sizes="196x196" href=“icons/hearticon-196.png">
+
+<!-- iOS -->
+<link rel="apple-touch-icon" href="icons/hearticon-120.png" sizes="120x120">
+<link rel="apple-touch-icon" href="icons/hearticon-152.png" sizes="152x152">
+<link rel="apple-touch-icon" href="icons/hearticon-180.png" sizes="180x180">
+
+<!-- Windows 8 IE 10-->
+<meta name="msapplication-TileColor" content="#FFFFFF">
+<meta name="msapplication-TileImage" content="icons/hearticon-144.png">
+
+<!— Windows 8.1 + IE11 and above —>
+<meta name="msapplication-config" content="icons/browserconfig.xml" />
+
+
+<!-- https://github.com/goldfire/howler.js/ -->
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.1/howler.min.js" integrity="sha512-L6Z/YtIPQ7eU3BProP34WGU5yIRk7tNHk7vaC2dB1Vy1atz6wl9mCkTPPZ2Rn1qPr+vY2mZ9odZLdGYuaBk7dQ==" crossorigin="anonymous"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.1/howler.min.js"></script>
+
+</head>
+</html>
+
+
+<style>
+
+:root {
+  /* Prevent most zoom in/out on iOS */
+  touch-action: pan-x pan-y;
+  height: 100%
+
+  /* Prevent the user from selecting text e.g. if they press-hold over text on a button */
+  -webkit-touch-callout: none;  /* iOS Safari */
+  -webkit-user-select: none;    /* Safari */
+  user-select: none;
+}
+
+h3 {
+  line-height: 0.4em;
+}
+h2 {
+  line-height: 0.4em;
+}
+h1 {
+  line-height: 0.4em;
+white-space: nowrap;
+}
+small {
+  font-size: 0.6em;
+}
+.alertText {
+  color: red;
+}
+button {
+  width: 45%;
+  height: 3em;
+  font-size: 15pt;
+  font-weight: normal;
+  padding: 0;
+  margin-left: 2%;
+  margin-right: 2%;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  border: 1px solid lightgray;
+  border-radius: 5px;
+  background-color: ghostwhite;
+}
+#actAdrenaline {
+  background-color: BlanchedAlmond;
+}
+#actAmiodarone {
+  background-color: mediumaquamarine;
+}
+button.highAlert {
+  border: 2px solid red;
+  box-shadow: 0 0 10px 3px red;
+}
+button.mediumAlert {
+  border: 2px solid yellow;
+  box-shadow: 0 0 10px 3px yellow;
+}
+button.unavailable {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.2) 10px,
+    rgba(0, 0, 0, 0.3) 10px,
+    rgba(0, 0, 0, 0.3) 20px
+    ),
+    grey;
+}
+button:focus {
+  border: 2px solid grey;
+  filter: brightness(80%);
+}
+
+.metronomeText {
+  text-shadow: 0 0 10px #FFFFFF;
+}
+
+img.alertIcon {
+  width: auto;
+  height: 0.8em;
+  padding-right: 0.5em;
+}
+
+</style>
+
+
+
+<html>
+<body>
+
+<!-- Warning texts -->
+<div id="warning"><img src="images/256px-Alert_icon-72a7cf.png" class="alertIcon" /><b>Photosensitive epilepsy warning:</b> This webapp features flashing colors.<br />
+<img src="images/256px-Alert_icon-72a7cf.png" class="alertIcon" />Webapps are constrained by browser and OS limitations. If the app doesn't seem to work well, try on a different browser or device. It's best to have confirmed the app is working with your configuration prior to real-world use.<br />
+<img src="images/256px-Alert_icon-72a7cf.png" class="alertIcon" />Intended only as an aid for trained clinicians. <b>No responsibility is taken by the app developer for any action or inaction.</b></div>
+<div id="iOSwarning" style="display:none;"><img src="images/256px-Alert_icon-72a7cf.png" class="alertIcon" />It looks like you're using iOS. iOS is not fully supported. Compression audio alerts are unreliable, and ventilation audio alerts will be disabled.</div>
+<div id="chromeWarning" style="display:none;"><img src="images/256px-Alert_icon-72a7cf.png" class="alertIcon" />It looks like you're using Google Chrome or a Chrome-derivative browser. Compression audio alerts are unreliable in Chrome. <b>Please try using a different browser.</b></div>
+<div id="audioLoadWarning" style="display:none;"><img src="images/256px-Alert_icon-72a7cf.png" class="alertIcon" />Audio not loaded. Alert sounds may not work as intended. This might be caused by a slow Internet connection or by the interference of security software.</div>
+
+
+<!-- Start button -->
+<button id="start" onClick="howler_loadSound(); startFirstResus();" style="margin:10% auto;display:block;" class="highAlert">Start resuscitation</button>
+
+<!-- Adrenaline time and cycle time -->
+<div id="adrenCycleTimers"></div>
+
+<!-- Compression and ventilation metronomes -->
+<div id="metronomes" style="position:relative;">
+  <div id="compressCircle"></div>
+  <div id="compressText" class="metronomeText"></div>
+  <div id="ventCircle"></div>
+  <div id="ventText" class="metronomeText"></div>
+</div>
+
+<!-- Hack to prevent the screen from timing out: play a 2x2 video at the end of the webpage -->
+<!-- For Chrome and Chrome derivatives (Samsung Internet) the video must be on screen to keep the screen on, so put it in the middle of the app area the user is most likely to need to remain on -->
+<!-- Generated from a short phonecamera video using ffmpeg -i 20210421_163133.mp4 -vf scale=2:2 -strict -2 keepScreenOnVideo.mp4 -->
+<!-- <video id="keepScreenOnVideo" src="20210421_163133.mp4" webkit-playsinline playsinline></video> -->
+<!-- The height:2px is important for Chrome, which will otherwise enlarge the video -->
+<video id="keepScreenOnVideo" src="keepScreenOnVideo.mp4" style="height:2px; float:left; filter:opacity(0%);" webkit-playsinline playsinline></video>
+
+<!-- Toggle switches: compression:ventilation ratio and no airway/airway -->
+<table id="toggleSwitches" style="border-spacing: 0 5px;">
+  <tr onClick="toggleRatio();">
+    <td style="width:33%;text-align:right;">15:2</td>
+    <td style="width:33%;border:1px solid black;"><div id="ratioSlider" style="width:1em;height:1em;-webkit-border-radius:0.5em;-moz-border-radius:0.5em;border-radius:0.5em;background:black;margin-left:auto;margin-right:0;"></div></td>
+    <td style="width:33%;">30:2</td>
+  </tr>
+  <tr onClick="toggleAirway();">
+    <td style="width:33%;text-align:right;">No airway</td>
+    <td style="width:33%;border:1px solid black;"><div id="airwaySlider" style="width:1em;height:1em;-webkit-border-radius:0.5em;-moz-border-radius:0.5em;border-radius:0.5em;background:black;margin-left:0;margin-right:auto;"></div></td>
+    <td style="width:33%;">Airway</td>
+  </tr>
+</table>
+
+
+<!-- Action buttons -->
+<div id="actionButtons">
+  <button id="actRhythm" onclick="actRhythmCheck(); untouchButton('actRhythm');" ontouchstart="touchButton('actRhythm'); actRhythmCheck();" ontouchend="untouchButton('actRhythm');">Rhythm check</button>
+  <button id="actAdrenaline" class=adrenaline" onClick="actAdrenaline(); untouchButton('actAdrenaline');" ontouchstart="touchButton('actAdrenaline'); actAdrenaline();" ontouchend="untouchButton('actAdrenaline');">Adrenaline</button>
+  <button id="actToggleResus" onClick="actToggleResus(); untouchButton('actToggleResus');" ontouchstart="touchButton('actToggleResus'); actToggleResus();" ontouchend="untouchButton('actToggleResus');">Stop resus</button>
+  <button id="actAmiodarone" onClick="actAmiodarone(); untouchButton('actAmiodarone');" ontouchstart="touchButton('actAmiodarone'); actAmiodarone();" ontouchend="untouchButton('actAmiodarone');">Amiodarone</button>
+  <select id="actOther" onchange="actOtherList(this.selectedIndex); this.selectedIndex=0; this.blur();">
+    <option selected disabled hidden>Select other event...</option>
+    <option>IV/IO access</option>
+    <option>Ketamine</option>
+    <option>Atropine</option>
+    <option>Pacing</option>
+    <option>Other action</option>
+  </select>
+  <br />
+</div>
+
+<!-- Case time and down time -->
+<div id="caseDownTimers"></div>
+
+<!-- Event log -->
+<div id="eventLog"></div>
+
+<!-- Footer -->
+<div id="footer">
+  <br />
+  <small>Resuscitatron webapp.<br />
+  Last updated 16/05/2021<br />
+  <a href="resuscitatroninfo.html">Click here for app info/devnotes/etc (NB: clicking this link will cease resus and erase any resus data)</a></small>
+</div>
+
+
+
+</body>
+</html>
+
+
+<script type="text/javascript">
+
+
+// Clinical practice settings
+compressionRate=110;          // per minute
+compressPeriod=1000*60/compressionRate;  // milliseconds
+ventilationRate=10;           // per minute
+chargeLeadIn=10*1000;         // milliseconds. How long before the ehythm check to warn should charge the defibrillator
+cyclePeriod=2*60*1000;        // milliseconds
+adrenalinePeriod=4*60*1000;   // milliseconds. How long between adrenaline administrations.
+amiodaronePeriod=20*60*1000;  // milliseconds. How long after 1st amiodarone for 2nd dose reminder.
+
+
+// Internal variables
+startTime=0;
+currentTime=0;
+lastRhythmCheckTime=0;
+timeNextCompressionDue=0;
+downTime=0;         // Total time under resuscitation in seconds
+underResus=true;
+airway=false;       // Do we have a 'secure' airway yet? (for continuous compressions)
+compressCount=0;    // If we don't have a secure airway, how many compressions since the last ventilation
+compressToVent=30;  // If we don't have a secure airway, how many compressions to 2 ventilations
+ventilating=false;  // If we don't have a secure airway, are we in a period of delivering the two ventilations
+lastAdrenalineTime=0;
+adrenalineDoses=0;
+lastAmiodaroneTime=0;
+amiodaroneDoses=0;
+eventLog="Event log:";
+usingiOS=detectiOS();
+usingChrome=detectChrome();
+
+// UI variables
+ventWaitTillNext=1200;  // If we don't have a secure airway, how long between ventilations in milliseconds
+compressMsgDur=250;     // How long for the message to remain
+ventMsgDur=700;         // How long for the message to remain
+alertSoundInterval=2000;  // Time between alert sounds in milliseconds
+nAudioFilesLoaded=0;
+
+// IDs of the Javascript event timers. Used to stop timers when needed
+compressEventTimerID=null;
+ventEventTimerID=null;
+rhythmCheckSoundEventTimerID=null;
+
+// Other global IDs and objects
+keepScreenOnVideo=document.getElementById("keepScreenOnVideo");
+compressSound=null;
+compressSoundFallback=null;
+ventSound=null;
+rhythmCheckSound=null;
+
+// Default display
+//if (usingiOS) document.getElementById('iOSwarning').style.display='block';
+//if (usingChrome) document.getElementById('chromeWarning').style.display='block';
+document.getElementById('toggleSwitches').style.display='none';
+document.getElementById('actionButtons').style.display='none';
+
+// If using a touch screen, disable mouse clicks
+// This hack allows us to catch touchscreen longpresses properly
+if ('ontouchstart' in window) {
+  document.getElementById('actRhythm').onclick=null;
+  document.getElementById('actAdrenaline').onclick=null;
+  document.getElementById('actToggleResus').onclick=null;
+  document.getElementById('actAmiodarone').onclick=null;
+}
+
+// Disable doubleclicks to prevent iOS zooming in/out on doubleclicking some elements that previous prevention methods did not catch
+document.addEventListener('dblclick', (event) => {
+  event.preventDefault()
+}, { passive: false });
+
+
+
+// Audio functions
+function howler_checkAllAudioLoaded() {
+  if ((compressSound.duration()>0)&(ventSound.duration()>0)&(rhythmCheckSound.duration()>0)&(buttonSound.duration()>0))
+    document.getElementById('audioLoadWarning').style.display='none';
+}
+
+function howler_loadError(id, msg) {
+  debug("Audio load error: "+msg);
+}
+
+function howler_loadSound() {
+  document.getElementById('audioLoadWarning').style.display='block';
+
+  // Sound effects originally from https://freesound.org/
+  // Edits and output to .ogg, .aiff, .wav, and .mp3 in Audacity
+  // Convert to .webm via https://www.freeconvert.com/webm-converter
+  // Base64 created with: base64 filename.mp3 -w 0
+
+  // beep.wav or 180821__empty-bell__beep.wav by user Empty Beep
+  // https://freesound.org/people/Empty%20Bell/sounds/180821/
+  compressSound=new Howl({
+    src: ["sounds/beep_longout.ogg",    // Android
+          "sounds/beep_longout.aiff",   // Apple
+          "sounds/beep_longout.wav",    // Microsoft
+          "sounds/beep_longout.webm"],  // Alternative option
+    onload: howler_checkAllAudioLoaded,
+    onloaderror: howler_loadError
+  });
+  // Try to fallback to inline base64 audio if unable to load audio file
+  // This approach is suboptimal as it isn't as reliable across browsers as Howler (hence it being a last resort)
+  compressSoundFallback=new Audio("data:audio/mpeg;base64,/+NAxAAAAAAAAAAAAFhpbmcAAAAPAAAAAwAABHoAY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV1dXV////////////////////////////////////////////AAAAUExBTUUzLjEwMAQ3AAAAAAAAAAAVCCQCyiEAAeAAAAR6otYH9gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/jcMQAIzqOqx9BiAB5qJZoqm6BAAfGMYxjHAMfHGMAAQA/TTTTT6CH00000009BD90EEEGq0000003Wmggggggg3/6kEEEEOmmmmmmmgYFwuFxBvzAmBlAy4DcAHaB2gBcG7xH5NCtBBQWQM2OeOeOeOeOeRci5FyCEUIoRQnC4XC4gbg+D4Pg+CAIAgc//wf5R35c1/lwfD7Yu4mororXimjzQ0AAAAUtDkq5oBEuMA0Sq1gxAIhNPQyZDIXJBwEmi9q22OKrlUAJB1Xc2y1uzlsQkVOXTUEl6kbDWlO2HW4cfR819NkmmKpdv42FxFKWzMOfVrrwu9SNaljbsVQoSXavEpe5L0oqrAbqadmw8MS7Ab/O01x7UVGGwQ76tzloSWe9uaty3Wpdad154YjsabowyKrwh2UUtaPvtL3JyZSw1gSDxgHgFGAUCSChe0/nRd3G2XUTBMAUAowXACDCSAMMnA043SQszBNA/+OAxNNbZBazH5jwRJTCtBpKwKTAYACJgB32UfBICAKAqMDYKcwoxMjEpDUMHMBowDQIDAdAOQnpDQ7S01qmmbNXLKtveOodkTrpVtTRrnMZZDKGczft6icMOzHH6iU9SzMVgKUzVPKn+h7cppa2Xf/LfOf//+nYpV6QG/blxqKQw7l5pkFxdl8eikMQ5uC3VaS01pVhrTd3Kel7Wkwlwo815sr/QDFK22w/8vpQ9mY6AgLVVL/1VdmZv1lll+8ce7xxx/KtTY6ypsu/jjll3e8cf//xxx5Wyy5rLLL9449/eOOP//7xx59ampsdZZZfjVpct448///ePK0ql1d2WuzbOYolUWWQ2SVNmT5sSMFCmg4QGHF3QOgJMAVrMhRVU1fmzVdlyaOGXJf2d1Ko1LsdU1Nl3HHHL9448//////yrWkQUcCi8QXwp3/kdCG4grYKbCGcf///xRcUVwKqTEFNRTMuMTAwqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq/+MwxPktkvZOWcPAAaqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+
+  // goldencookie0.wav or 488355__bonhomhongon__goldencookie0.mp3 by user Bonhomhongon
+  // https://freesound.org/people/Bonhomhongon/sounds/488355/
+  ventSound=new Howl({
+    src: ["sounds/488355__bonhomhongon__goldencookie0.ogg",
+          "sounds/488355__bonhomhongon__goldencookie0.aiff",
+          "sounds/488355__bonhomhongon__goldencookie0.wav",
+          "sounds/488355__bonhomhongon__goldencookie0.webm"],
+    onload: howler_checkAllAudioLoaded,
+    onloaderror: howler_loadError
+  });
+  ventSoundFallback=new Audio("data:audio/mpeg;base64,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");
+
+  // Beep Buzz or 514153__edwardszakal__beep-buzz.mp3 by user edwardszakal
+  // https://freesound.org/people/edwardszakal/sounds/514153/
+  rhythmCheckSound=new Howl({
+    src: ["sounds/514153__edwardszakal__beep-buzz.ogg",
+          "sounds/514153__edwardszakal__beep-buzz.aiff",
+          "sounds/514153__edwardszakal__beep-buzz.wav",
+          "sounds/514153__edwardszakal__beep-buzz.webm"],
+    onload: howler_checkAllAudioLoaded,
+    onloaderror: howler_loadError
+  });
+  rhythmCheckSoundFallback=new Audio("data:audio/mpeg;base64,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");
+
+  // Button 02.wav or 219479__jarredgibb__button-02.wav
+  // https://freesound.org/people/JarredGibb/sounds/219479/
+  buttonSound=new Howl({
+    src: ["sounds/button.ogg",    // Android
+          "sounds/button.aiff",   // Apple
+          "sounds/button.wav",    // Microsoft
+          "sounds/button.webm"],  // Alternative option
+    onload: howler_checkAllAudioLoaded,
+    onloaderror: howler_loadError
+  });
+  buttonSoundFallback=new Audio("data:audio/mpeg;base64,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");
+
+}
+
+function howler_playSound(soundName) {
+  switch (soundName) {
+    case "cprSound": 
+      if (compressSound.duration()>0)
+        compressSound.play();
+      else
+        compressSoundFallback.play();
+      break;
+
+    case "ventSound":
+      if (ventSound.duration()>0)
+        ventSound.play();
+      else
+        ventSoundFallback.play();
+      break;
+
+    case "rhythmCheckSound":
+      if (rhythmCheckSound.duration()>0)
+        rhythmCheckSound.play();
+      else
+        rhythmCheckSoundFallback.play();
+      break;
+
+    case 'buttonSound':
+      if (buttonSound.duration()>0)
+        buttonSound.play();
+      else
+        buttonSoundFallback.play();
+      break;
+
+  }
+}
+
+function debug (message) {
+  logEvent(message);
+}
+
+function startFirstResus() {
+  keepScreenOn();
+  // Hide the start button and warning
+  document.getElementById('start').style.display='none';
+  document.getElementById('warning').style.display='none';
+
+  startTime=Date.now();
+  lastRhythmCheckTime=startTime;
+  document.getElementById('actOther').selectedIndex=0;
+
+  // Set up display
+  /* Intent is for items to have the following heights, although this is not atually fully implemented:
+     Adrenaline timer (h3 which is 1.5em)  3mm / 98mm  =  3%
+     Cycle timer (h1 which is 2.5em)       5mm / 98mm  =  5%
+     Metronome                            40mm / 98mm  = 40%
+     Switches                             10mm / 98mm  = 10%
+     Buttons                              17mm / 98mm  = 17%
+     Other action                          5mm / 98mm  =  5%
+     Case timer (h3 which is 1.5em)        3mm / 98mm  =  3%
+     Down timer (h3 which is 1.5em)        3mm / 98mm  =  3%       */
+  width=window.innerWidth;
+  height=window.innerHeight;
+  // Scale text for screen resolution (app was developed on a screen with height 560px)
+  document.body.style.fontSize=16*height/560+"px";
+  // Metronomes
+  compressCircleDiameter=Math.round(0.4*height);
+  ventCircleDiameter=Math.round(0.15*height);
+  // Show the switches
+  document.getElementById('toggleSwitches').style.display='block';
+  //Other setup things
+  displayTimers();
+  setInterval(updateTimers,1000);
+  document.getElementById('footer').innerHTML="<br /><br /><br />"+document.getElementById('footer').innerHTML;
+  logString="Webapp started";
+  if (usingiOS)
+    logString+=" (iOS)";
+  else if (usingChrome)
+    logString+=" (Chrome or derivative)";
+  logEvent(logString);
+  // Display the CPR metronome, scaled for height of screen
+  document.getElementById("compressCircle").style="width:"+compressCircleDiameter+"px;height:"+compressCircleDiameter+"px;-webkit-border-radius:"+compressCircleDiameter/2+"px;-moz-border-radius:"+compressCircleDiameter/2+"px;border-radius:"+compressCircleDiameter/2+"px;background:brown;margin:auto;";
+  document.getElementById("compressText").style="width:100%;position:absolute;top:-10px;";
+  // Display the ventilation metronome, scaled for height of screen
+document.getElementById("ventCircle").style="width:"+ventCircleDiameter+"px;height:"+ventCircleDiameter+"px;-webkit-border-radius:"+Math.round(ventCircleDiameter/2)+"px;-moz-border-radius:"+Math.round(ventCircleDiameter/2)+"px;border-radius:"+Math.round(ventCircleDiameter/2)+"px;background:lavender;position:absolute;top:"+Math.round((compressCircleDiameter/2)-(ventCircleDiameter/2))+"px;left:"+Math.round((document.documentElement.clientWidth/2)-(ventCircleDiameter/2)-5)+"px;";
+  document.getElementById("ventText").style="width:100%;height:"+ventCircleDiameter+"px;position:absolute;top:"+Math.round((compressCircleDiameter/2)-(ventCircleDiameter/2))+"px;";
+  // Display the buttons, scaled for height of screen
+  document.getElementById('actionButtons').style.display='block';
+  changeStyle('button',0.08*560+"px");  // Each button is 8% of height, designed on 560px height screen
+
+  startCompressions();
+}
+
+// From https://stackoverflow.com/questions/730048/how-to-change-remove-css-classes-definitions-at-runtime
+function changeStyle(selectorText,height)
+{
+  var theRules = new Array();
+  if (document.styleSheets[0].cssRules) {
+    theRules = document.styleSheets[0].cssRules;
+  } 
+  else if (document.styleSheets[0].rules) {
+    theRules = document.styleSheets[0].rules;
+  }
+  for (n in theRules)
+  {
+    if (theRules[n].selectorText == selectorText)   {
+      theRules[n].style.height = height;
+    }
+  }
+}
+
+function videoLoopFunction() {
+  keepScreenOnVideo.currentTime=0;
+  keepScreenOnVideo.play();
+}
+
+// Video play hack to keep screen on
+function keepScreenOn() {
+  if (typeof keepScreenOnVideo.loop == 'boolean') {
+    keepScreenOnVideo.loop=true;
+  } else {
+    keepScreenOnVideo.addEventListener('ended',videoLoopFunction(),false);
+  }
+  setTimeout(() => { keepScreenOnVideo.play(); keepScreenOnVideo.muted=true; },1000)  // Play after a short delay, otherwise it won't play at all
+}
+
+function allowScreenToTurnOff() {
+  if (typeof keepScreenOnVideo.loop=='boolean') {
+    keepScreenOnVideo.loop=false;
+  } else {
+    keepScreenOnVideo.removeEventListener('ended',videoLoopFunction,false);
+  }
+  keepScreenOnVideo.pause();
+  keepScreenOnVideo.currentTime=0;
+}
+
+function detectiOS() {
+  return [
+    'iPad Simulator',
+    'iPhone Simulator',
+    'iPod Simulator',
+    'iPad',
+    'iPhone',
+    'iPod'
+  ].includes(navigator.platform)
+  // iPad on iOS 13 detection
+  || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+}
+
+// From user Jonathan Marzullo at https://stackoverflow.com/questions/4565112/javascript-how-to-find-out-if-the-user-browser-is-chrome
+function detectChrome() {
+// please note, 
+// that IE11 now returns undefined again for window.chrome
+// and new Opera 30 outputs true for window.chrome
+// but needs to check if window.opr is not undefined
+// and new IE Edge outputs to true now for window.chrome
+// and if not iOS Chrome check
+// so use the below updated condition
+var isChromium = window.chrome;
+var winNav = window.navigator;
+var vendorName = winNav.vendor;
+var isOpera = typeof window.opr !== "undefined";
+var isIEedge = winNav.userAgent.indexOf("Edge") > -1;
+var isIOSChrome = winNav.userAgent.match("CriOS");
+
+if (isIOSChrome) {
+   // is Google Chrome on IOS
+  return true;
+} else if(
+  isChromium !== null &&
+  typeof isChromium !== "undefined" &&
+  vendorName === "Google Inc." &&
+  isOpera === false &&
+  isIEedge === false
+) {
+   // is Google Chrome
+  return true;
+} else { 
+   // not Google Chrome 
+  return false;
+}
+}
+
+function playSound(soundName) {
+  howler_playSound(soundName);
+}
+
+function startCompressions() {
+  compressCount=0;
+  ventilating=false;
+  currentTime=Date.now();
+  timeNextCompressionDue=currentTime+compressPeriod;
+  compressEventTimerID=setInterval(displayCompressions,10);
+}
+
+function timeString(timeSeconds,wantHours) {
+  s="";
+  hours=Math.floor(timeSeconds/60/60);
+  if (wantHours) {
+    s=hours+":";
+  }
+  s+=pad2(Math.floor((timeSeconds-hours*60*60)/60))+":";
+  s+=pad2(timeSeconds%60);
+  return s;
+}
+
+function displayTimers() {
+  currentTime=Date.now();
+  // Adrenaline time text and alert
+  adrenCycleTimerStr="<h3";
+  if (lastAdrenalineTime>0) {
+    if ((currentTime-lastAdrenalineTime)>adrenalinePeriod) {
+      adrenCycleTimerStr+=" class='alertText'"
+      document.getElementById("actAdrenaline").setAttribute("class","highAlert");
+    }
+    adrenCycleTimerStr+=">Adrenaline time: "+timeString(Math.round((currentTime-lastAdrenalineTime)/1000),false);
+    
+  } else
+    adrenCycleTimerStr+=">Adrenaline time: n/a";
+  adrenCycleTimerStr+="</h3>";
+  // Cycle time text and alert
+  chargeStr="";
+  adrenCycleTimerStr+="<h1";
+  if (underResus) {
+    // Check whether we are in the defibrillator charge lead-in time
+    if ((currentTime-lastRhythmCheckTime)>=(cyclePeriod-chargeLeadIn)) {
+      adrenCycleTimerStr+=" class='alertText'";
+      chargeStr=" CHARGE";
+
+      // Check whether we've reached rhythm check time
+      if ((currentTime-lastRhythmCheckTime)>=cyclePeriod) {
+        chargeStr=" CHECK";
+        document.getElementById("actRhythm").setAttribute("class","highAlert");
+        if (rhythmCheckSoundEventTimerID==null)
+          rhythmCheckSoundEventTimerID=setInterval(() => { playSound('rhythmCheckSound'); },alertSoundInterval)  // Set a recurring audio alert that we've passed the cycle time
+      }
+    }
+    adrenCycleTimerStr+=">Cycle";
+    if (chargeStr==="")
+      adrenCycleTimerStr+=" time";  // Only display the word 'time' if not displaying 'CHARGE' or "SHOCK' (so everything fits on one line on phone screens)
+    adrenCycleTimerStr+=": "+timeString(Math.round((currentTime-lastRhythmCheckTime)/1000),false)+chargeStr+"</h1>";
+  } else
+    adrenCycleTimerStr+=">Cycle time: n/a</h1>";
+
+  // Amiodarone time alert
+  if ((lastAmiodaroneTime>0)&(underResus)) {
+    if (((currentTime-lastAmiodaroneTime)>amiodaronePeriod)&(amiodaroneDoses<2)) {
+      document.getElementById("actAmiodarone").setAttribute("class","mediumAlert");
+    }
+  }
+
+  // Case time text
+  caseDownTimerStr="<h3>Case time: "+timeString(Math.round((currentTime-startTime)/1000),true)+"</h3>";
+  // Down time text
+  caseDownTimerStr+="<h3>Down time: "+timeString(downTime,true)+"</h3>";
+
+  // Display text
+  document.getElementById("caseDownTimers").innerHTML=caseDownTimerStr;
+  document.getElementById("adrenCycleTimers").innerHTML=adrenCycleTimerStr;
+}
+
+function updateTimers() {
+  if (underResus) {
+    downTime++;
+  }
+  displayTimers();
+}
+
+function doCompressionLightUp(n) {
+  playSound('cprSound');
+  document.getElementById("compressCircle").style.background="red";
+  document.getElementById("compressText").innerHTML="<h1 style='text-align:center;'><br />COMPRESS"+(n>0?'<br /><br />'+n:'')+"</h1>";
+  setTimeout(() => { 
+    document.getElementById("compressCircle").style.background="lavenderblush";
+    document.getElementById("compressText").innerHTML="<h1> </h1>";
+    },compressMsgDur);
+}
+
+// This function gets called frequently
+function displayCompressions() {
+  currentTime=Date.now();
+  if (currentTime>=timeNextCompressionDue) {
+    timeNextCompressionDue+=compressPeriod;  // Plan the next compression
+    if (airway) {
+      doCompressionLightUp();
+    } else {
+      if (!ventilating) {
+        if (compressCount<compressToVent) {
+          compressCount++;
+          doCompressionLightUp(compressCount);
+        } else {
+          ventilating=true;
+          compressCount=0;
+          doNoAirwayVentilations();
+        }
+      }
+    }
+  }
+}
+
+function doVentilationLightUp(n) {
+  document.getElementById("ventCircle").style.background="royalblue";
+  document.getElementById("ventText").innerHTML="<h1 style='text-align:center;'>VENTILATE"+(n>0?'<br /><br />'+n:'')+"</h1>";
+  setTimeout(() => { 
+    document.getElementById("ventCircle").style.background="lavender";
+    document.getElementById("ventText").innerHTML="<h1> </h1>";
+    },ventMsgDur);
+  setTimeout(() => { playSound('ventSound'); }, 10)
+}
+
+// Set event timers to do the two breaths during a compresion pause, in the case where there is no 'secure' airway
+function doNoAirwayVentilations() {
+  doVentilationLightUp(1);
+  setTimeout(() => { doVentilationLightUp(2); }, ventWaitTillNext);
+  setTimeout(() => { ventilating=false; }, ventWaitTillNext*2);
+}
+
+function toggleRatio() {
+  playSound('buttonSound');  // Make noise
+  if (compressToVent==30) {
+    compressToVent=15;
+    document.getElementById("ratioSlider").style.marginLeft="0";
+    document.getElementById("ratioSlider").style.marginRight="auto";
+  } else {
+    compressToVent=30;
+    document.getElementById("ratioSlider").style.marginLeft="auto";
+    document.getElementById("ratioSlider").style.marginRight="0";
+  }
+  logEvent("Ratio changed to "+compressToVent+":2")
+}
+
+function toggleAirway() {
+  playSound('buttonSound');  // Make noise
+  airway=!airway;
+  if (airway) {
+    if (underResus)
+      ventEventTimerID=setInterval(doVentilationLightUp,1000*60/ventilationRate);
+    document.getElementById("airwaySlider").style.marginLeft="auto";
+    document.getElementById("airwaySlider").style.marginRight="0";
+    logEvent("Airway");
+  } else {
+    compressCount=0;
+    clearInterval(ventEventTimerID);
+    document.getElementById("airwaySlider").style.marginLeft="0";
+    document.getElementById("airwaySlider").style.marginRight="auto";
+    logEvent("No airway")
+  }
+}
+
+// Pad to 2 digits
+function pad2(number) { 
+  return (number<10?'0':'')+number
+}
+
+function logEvent(newEvent) {
+  currentDate=new Date();
+  eventLog+="<br />"+
+    pad2(currentDate.getHours())+":"+pad2(currentDate.getMinutes())+":"+pad2(currentDate.getSeconds())+
+    " ("+timeString(Math.round((currentTime-startTime)/1000),true,false)+") "+
+    " "+newEvent;
+  document.getElementById("eventLog").innerHTML=eventLog;
+}
+
+function touchButton(buttonId) {
+  document.getElementById(buttonId).focus();  // 'Highlight' button
+}
+
+function untouchButton(buttonId) {
+  setTimeout(() => { window.focus(); }, 10);
+  setTimeout(() => { document.getElementById(buttonId).blur(); }, 20);
+}
+
+function actRhythmCheck() {
+  playSound('buttonSound');  // Make noise
+//  doButtonPress('actRhythm');
+  lastRhythmCheckTime=Date.now();
+  document.getElementById("actRhythm").setAttribute("class","");  // Clear the alert on the rhythm check button
+  clearInterval(rhythmCheckSoundEventTimerID);
+  rhythmCheckSoundEventTimerID=null;
+  displayTimers();
+  logEvent("Rhythm check");
+}
+
+function actAdrenaline() {
+  playSound('buttonSound');
+  adrenalineDoses++;
+  if (underResus)
+    lastAdrenalineTime=Date.now();
+  displayTimers();
+  document.getElementById("actAdrenaline").setAttribute("class","");  // Clear the highlight on the adrenaline button
+  logEvent("Adrenaline dose #"+adrenalineDoses);
+}
+
+function actAmiodarone() {
+  playSound('buttonSound');
+  amiodaroneDoses++;
+  if (underResus)
+    lastAmiodaroneTime=Date.now();
+  displayTimers();
+  if (amiodaroneDoses==1)
+    document.getElementById("actAmiodarone").setAttribute("class","");  // Clear the highlight on the amiodarone button
+  else
+    document.getElementById("actAmiodarone").setAttribute("class","unavailable");  // Grey out the amiodarone button
+  logEvent("Amiodarone dose #"+amiodaroneDoses);
+}
+
+function actToggleResus() {
+  playSound('buttonSound');
+  underResus=!underResus;
+  if (!underResus) {
+    allowScreenToTurnOff();
+    document.getElementById("actRhythm").setAttribute("class","");
+    clearInterval(rhythmCheckSoundEventTimerID);
+    clearInterval(compressEventTimerID);
+    clearInterval(ventEventTimerID);
+    lastAdrenalineTime=0;  // Reset the adrenaline timer, so we're not advised to give adrenaline immediately if resus recommences
+    document.getElementById("actAdrenaline").setAttribute("class","");  // Clear the alert on the adrenaline button
+    document.getElementById("actAmiodarone").setAttribute("class","");  // Clear the alert on the amiodarone button
+    document.getElementById("actToggleResus").innerHTML="Restart resus";
+    logEvent("Resuscitation ceased");
+  } else {
+    keepScreenOn();
+    lastRhythmCheckTime=new Date();
+    startCompressions();
+    if (airway)
+      ventEventTimerID=setInterval(doVentilationLightUp,1000*60/ventilationRate);
+    document.getElementById("actToggleResus").innerHTML="End resus";
+    logEvent("Resuscitation restarted");
+  }
+}
+
+function actOtherList(selectedIndex) {
+  if (selectedIndex>0)
+    logEvent(document.getElementById("actOther").options[selectedIndex].innerHTML);
+}
+
+</script>
+
