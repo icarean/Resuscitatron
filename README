@@ -11,3 +11,6 @@ This software comes with absolutely no warranties whatsoever. It is designed to 
 This project is a single-page Javascript 'webapp' to assist clinicians with resuscitation timing and record-keeping. It provides audio and visual cues for CPR, ventilation, rhythm checks, and medication/drug timings. Because it is implemented as a .html page, it can be loaded by any browser, and works across many (but not all!) device/browser combinations. The goal of this project is to ease the burden on clinicians during cardiac arrest resuscitation of keeping track of numerous timing requirements.
 
 The author recommends the files be hosted on a www-facing server capable of delivering HTML pages (e.g. by a clinical organisation), and users (e.g. clinicians) access the appropriate webpage via a homescreen shortcut on their device or a browser bookmark. The author also recommends that potential users trial the operation of this webapp on their device/browser combination prior to using it in any clinical care situation.
+
+To download (clone) all files from this project, run:
+git clone https://github.com/icarean/Resuscitatron/
